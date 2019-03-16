@@ -1,0 +1,39 @@
+node('slave')
+{
+    stage('Git Checkout')
+    {
+        git credentialsId: 'github-user-passwd', url: 'https://github.com/binayakgithub/login.git'
+    }
+stage('Sonar Code Quality Check')
+    {
+        def mvnHOME=tool name: 'Maven', type: 'maven'
+        withSonarQubeEnv('SonarQube')
+        {
+            sh "${mvnHOME}/bin/mvn sonar:sonar"
+        }
+    
+stage('Maven Build')
+    {
+        def mvnHome=tool name: 'maven', type: 'maven'
+        def mvnCMD="${mvnHome}/bin/mvn"
+        sh "${mvnCMD} clean package"
+    }
+    stage('Build Docker Image')
+    {
+        sh 'docker build -t binayakredhat/accountlogin:1.0.0 .'
+    }
+    stage('Push Docker Image')
+    {
+    withCredentials([string(credentialsId: 'dockerhubcredentials', variable: 'dockerHubPwd')]) {
+        sh "docker login -u binayakredhat -p ${dockerHubPwd}"
+        sh 'docker push binayakredhat/accountlogin:1.0.0'
+      }
+    }
+    stage('Run the Image')
+    {
+        runCMD='docker run -d --name AccountLogin -p 8080:8080 binayakredhat/accountlogin:1.0.0'
+        sshagent(['sshagent-to-deploy']) {
+        sh "ssh -o StrictHostKeyChecking=no centos@192.168.1.10 ${runCMD}"
+        }
+    }
+   }
