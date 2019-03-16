@@ -1,0 +1,33 @@
+node('slave1')
+{
+    stage('Git Checkout')
+    {
+        git credentialsId: 'github-user-password', url: 'https://github.com/binayakgithub/java.git'
+          
+    }
+    stage('Sonar Code Quality Check')
+    {
+        def mvnHOME=tool name: 'Maven', type: 'maven'
+        withSonarQubeEnv('SonarQube')
+        {
+            sh "${mvnHOME}/bin/mvn sonar:sonar"
+        }
+
+    stage('Maven Build')
+    {
+      def mvnHome=tool name: 'maven', type: 'maven'
+      def mvncmd="${mvnHome}/bin/mvn"
+      sh "${mvncmd} clean package"
+    }
+   stage('Copy jar to Dep Server')
+    {
+        sh 'scp -rv /var/lib/slave/workspace/PetClinic/target/spring-petclinic-2.1.0.BUILD-SNAPSHOT.jar root@192.168.2.112:/root'
+    }
+    stage('Run Application')
+    {
+        def cmd='java -jar /root/spring-petclinic-2.1.0.BUILD-SNAPSHOT.jar --port=8080'
+        sshagent(['Master-Depoly']) {
+        sh "ssh -o StrictHostKeyChecking=no root@192.168.2.112 ${cmd}"
+        }
+    }
+}
