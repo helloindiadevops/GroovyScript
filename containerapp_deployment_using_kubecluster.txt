@@ -1,0 +1,34 @@
+node('slave')
+{
+    stage('Git Checkout')
+    {
+        git credentialsId: 'github-cred', url: 'https://github.com/binayakgithub/login.git'
+    }
+    stage('Maven build')
+    {
+      def mvnHome=tool name: 'maven', type: 'maven'
+      def mvncmd="${mvnHome}/bin/mvn"
+      sh "${mvncmd} clean package"
+    }
+    stage('Build Docker Image')
+    {
+        sh 'docker build -t binayakredhat/accountlogin:1.0.0 .'
+    }
+    stage('Push Docker image to DockerHub')
+    {
+        withCredentials([string(credentialsId: 'binudockerhubcred', variable: 'dockerhubpwd')]){
+        sh "docker login -u binayakredhat -p ${dockerhubpwd}"
+        sh 'docker push binayakredhat/accountlogin:1.0.0'
+      }
+      stage('Run image in kube master')
+      {
+          def dockerrun='sudo kubectl create deployment loginapp --image=binayakredhat/accountlogin:1.0.0'
+          def expose='sudo kubectl create service nodeport loginapp --tcp=8080:8080'
+          sshagent(['jenins-k8smaster']) {
+          sh "ssh -o StrictHostKeyChecking=no centos@192.168.1.117 ${dockerrun}"
+          sh "ssh -o StrictHostKeyChecking=no centos@192.168.1.117 ${expose}"
+          
+      }
+      }
+    }
+}
