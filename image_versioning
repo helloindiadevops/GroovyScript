@@ -1,0 +1,40 @@
+node ('slave')
+{
+    stage ('git-checkout')
+    {
+       git credentialsId: 'git-jenkins', url: 'https://github.com/Siva-aldebaran/login.git' 
+    }
+    stage ('Building Source code')
+{
+    def mvnHome=tool name: 'maven', type: 'maven'
+    def mvnCMD="${mvnHome}/bin/mvn"
+    sh "${mvnCMD} clean package"
+}
+    stage ('build docker image')
+    {
+        sh 'docker build -t $JOB_NAME:v1.$BUILD_ID .'
+        sh 'docker tag $JOB_NAME:v1.$BUILD_ID sivarajadocker/$JOB_NAME:v1.$BUILD_ID'
+        sh 'docker tag $JOB_NAME:v1.$BUILD_ID sivarajadocker/$JOB_NAME:v1.$BUILD_ID'
+    }
+    stage ('Push Docker Image to Docker Hub')
+    {
+        withCredentials([string(credentialsId: 'sivarajadocker', variable: 'dockerpassword')]) {
+        sh "docker login -u sivarajadocker -p ${dockerpassword}"
+        sh 'docker push sivarajadocker/$JOB_NAME:v1.$BUILD_ID'
+        sh 'docker push sivarajadocker/$JOB_NAME:latest'
+}
+    }
+    stage ('Run the Container')
+    {
+        dkrcmd="docker rm -f AccountLogin"
+        sshagent(['master-deploy']) {
+        sh "ssh -o StrictHostKeyChecking=no centos@10.0.0.27 ${dkrcmd}"
+        }
+        runCMD='docker run -d --name AccountLogin -p 8080:8080 sivarajadocker/$JOB_NAME:latest'
+        sshagent(['master-deploy']) {
+        sh "ssh -o StrictHostKeyChecking=no centos@10.0.0.27 ${runCMD}"
+}
+        
+        
+    }
+}
