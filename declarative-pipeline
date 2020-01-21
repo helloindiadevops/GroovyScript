@@ -1,17 +1,32 @@
 pipeline{
     agent any
-    tools{
+    /*tools{
         maven "maven"
+    }*/
+    environment{
+        PATH = "/usr/share/maven/bin:$PATH"
     }
     stages{
         stage('Git checkout'){
             steps{
-                git credentialsId: 'github-cred', url: 'https://github.com/binayakgithub/login.git'
+                git credentialsId: 'github-cred', url: 'https://github.com/binayakgithub/java.git'
             }
         }
         stage('maven build'){
             steps{
                 sh "mvn clean package"
+                sh "mv target/*.jar target/petclinic.jar"
+            }
+            
+        }
+        stage('Deploy'){
+            steps{
+                sshagent(['deployserver']) {
+                sh """
+                scp -o StrictHostKeyChecking=no target/petclinic.jar  centos@172.31.47.80:/home/centos
+                ssh centos@172.31.47.80 java -Dserver.port=8081 -jar /home/centos/petclinic.jar
+                """
+}
             }
         }
         
