@@ -1,0 +1,19 @@
+pipeline{
+    agent any
+    tools{
+        maven "maven"
+    }
+    stages{
+        stage('Git checkout'){
+            steps{
+                git credentialsId: 'github-cred', url: 'https://github.com/binayakgithub/login.git'
+            }
+        }
+        stage('maven build'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        
+    }
+}
