@@ -10,16 +10,16 @@ pipeline{
         //This can be http or https
         NEXUS_PROTOCOL= "http"
         //Where your Nexus is running
-        NEXUS_URL= "192.168.56.40:8081"
+        NEXUS_URL= "172.16.16.102:8081"
         // Repository Name where we will upload the artifacts
-        NEXUS_REPOSITORY= "devops-snapshot"
+        NEXUS_REPOSITORY= "test-snapshot"
         // Jenkins credentials id to authenticate to Nexus OSS
         NEXUS_CREDENTIAL_ID= "nexus-cred"
     }
     stages{
         stage('Git checkout'){
             steps{
-                git credentialsId: 'github-creds', url: 'https://github.com/binayakgithub/login.git'
+                git credentialsId: 'github-creds', url: 'https://github.com/helloindiadevops/login.git'
             }
         }
 		stage('Sonarqube code quality') {
@@ -29,7 +29,7 @@ pipeline{
     steps {
         echo "$JOB_NAME"
         /*ws("/var/lib/jenkins/workspace/${JOB_NAME}/src")*/
-        withSonarQubeEnv('sonarqubeserver') {
+        withSonarQubeEnv('sonarqube') {
             /*sh "${scannerHome}/bin/sonar-scanner -Dsonar.sourceEncoding=UTF-8 -Dsonar.projectKey=testpipeline -Dsonar.projectName=testpipeline -Dsonar.projectVersion=1.0"*/
             sh "mvn sonar:sonar"
         }
