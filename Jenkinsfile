@@ -22,7 +22,7 @@ pipeline{
                 git credentialsId: 'github-creds', url: 'https://github.com/helloindiadevops/login.git'
             }
         }
-		stage('Sonarqube code quality') {
+    stage('Sonarqube code quality') {
     environment {
         scannerHome = tool 'sonarscanner'
         }
