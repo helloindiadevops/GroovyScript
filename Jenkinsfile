@@ -14,7 +14,7 @@ pipeline{
         // Repository Name where we will upload the artifacts
         NEXUS_REPOSITORY= "test-snapshot"
         // Jenkins credentials id to authenticate to Nexus OSS
-        NEXUS_CREDENTIAL_ID= "nexus-cred"
+        NEXUS_CREDENTIAL_ID= "nexus-cred1"
     }
     stages{
         stage('Git checkout'){
